@@ -17,7 +17,6 @@ jobs:
       before_script:
         - docker-compose -v
         - docker -v
-        - docker-compose build
         # Ensure celerybeat does not crash due to non-existent tables
         - docker-compose run --rm app sh -c "python manage.py migrate"
       script:
