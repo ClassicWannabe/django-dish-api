@@ -5,9 +5,7 @@ python:
 services:
   - docker
 
-before_script: 
-  - pip install docker-compose
-  - docker-compose run --rm app sh -c "python manage.py migrate" 
+before_script: pip install docker-compose
 
 script:
   - docker-compose run --rm app sh -c "pytest && flake8"
