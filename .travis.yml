@@ -7,5 +7,16 @@ services:
 
 before_script: pip install docker-compose
 
-script: 
-  - docker-compose run app sh -c "pytest && flake8"
+jobs:
+  include:
+    - name: "Linter"
+      before_script:
+        - pip install -q flake8
+      script:
+        - "flake8"
+
+    - name: "Django Test"
+      script:
+        - docker-compose run app sh -c "pytest"
+      after_failure:
+        - docker-compose -f local.yml logs
