@@ -33,7 +33,8 @@ class CustomUser(AbstractUser):
     """Custom user model using email instead of username"""
 
     email = models.EmailField(_("email address"), unique=True)
-    name = models.CharField(_("name"), max_length=255)
+    name = models.CharField(_("name"), max_length=255, blank=True)
+    username = None
     first_name = None
     last_name = None
 
