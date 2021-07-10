@@ -5,16 +5,9 @@ python:
 services:
   - docker
 
-before_script: pip install docker-compose
+before_script: 
+  - pip install docker-compose
+  - docker-compose run --rm app sh -c "python manage.py migrate" 
 
-jobs:
-  include:
-    - name: "Linter"
-      before_script:
-        - pip install -q flake8
-      script:
-        - "flake8"
-
-    - name: "Django Test"
-      script:
-        - docker-compose run --rm app sh -c "pytest"
+script:
+  - docker-compose run --rm app sh -c "pytest && flake8"
