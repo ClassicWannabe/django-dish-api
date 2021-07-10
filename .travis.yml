@@ -7,5 +7,18 @@ services:
 
 before_script: pip install docker-compose
 
-script:
-  - docker-compose run --rm app sh -c "pytest && flake8"
+jobs:
+  include:
+    - name: "Linter"
+      script:
+        - docker-compose run --rm app sh -c "flake8"
+
+    - name: "Django Test"
+      before_script:
+        - docker-compose -v
+        - docker -v
+        - docker-compose build
+        # Ensure celerybeat does not crash due to non-existent tables
+        - docker-compose run --rm app sh -c "python manage.py migrate"
+      script:
+        - docker-compose run --rm app sh -c "pytest && flake8"
