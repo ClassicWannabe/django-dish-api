@@ -10,11 +10,9 @@ def test_users_listed(admin_client: Client) -> None:
     assert response.status_code == 200
 
 
-def test_user_change_page(django_user_model, admin_client: Client) -> None:
+def test_user_change_page(create_user, admin_client: Client) -> None:
     """Test that the user edit page works"""
-    user = django_user_model.objects.create_user(
-        name="Ruslan", email="email@mail.com", password="123"
-    )
+    user = create_user(name="Ruslan", email="email@mail.com", password="123")
     url = reverse("admin:core_customuser_change", args=[user.id])
     response = admin_client.get(url)
 
