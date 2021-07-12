@@ -49,3 +49,22 @@ class PrivateIngredientAPITests:
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data) == 1
         assert response.data[0]["name"] == ingredient.name
+
+    def test_create_ingredient_successful(self, api_client, simple_user) -> None:
+        """Test creating a new ingredient"""
+        payload = {"name": "Pumpkin"}
+
+        api_client.post(INGREDIENTS_URL, payload)
+
+        exists = Ingredient.objects.filter(
+            user=simple_user, name=payload["name"]
+        ).exists()
+
+        assert exists
+
+    def test_create_ingredient_invalid(self, api_client, simple_user) -> None:
+        """Test creating an invalid ingredient fails"""
+        payload = {"name": ""}
+        response = api_client.post(INGREDIENTS_URL, payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
