@@ -20,10 +20,10 @@ class PublicTagsAPITests:
 class PrivateTagsAPITests:
     """Test the authorized user tags API"""
 
-    def test_retrieve_tags(self, simple_user, api_client) -> None:
+    def test_retrieve_tags(self, simple_user, api_client, helper_functions) -> None:
         """Test retrieving tags"""
-        Tag.objects.create(user=simple_user, name="Vegan")
-        Tag.objects.create(user=simple_user, name="Dessert")
+        helper_functions.sample_tag(user=simple_user, name="Vegan")
+        helper_functions.sample_tag(user=simple_user, name="Dessert")
 
         response = api_client.get(TAGS_URL)
 
@@ -35,14 +35,14 @@ class PrivateTagsAPITests:
         assert response.data == serializer.data
 
     def test_tags_limited_to_user(
-        self, simple_user, api_client, django_user_model
+        self, simple_user, api_client, django_user_model, helper_functions
     ) -> None:
         """Test that tags returned are for the authenticated user"""
         user2 = django_user_model.objects.create(
             email="otheruser@gmail.com", password="password"
         )
-        Tag.objects.create(user=user2, name="Choco")
-        tag = Tag.objects.create(user=simple_user, name="Fried")
+        helper_functions.sample_tag(user=user2, name="Choco")
+        tag = helper_functions.sample_tag(user=simple_user, name="Fried")
 
         response = api_client.get(TAGS_URL)
 

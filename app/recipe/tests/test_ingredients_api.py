@@ -20,10 +20,12 @@ class PublicIngredientAPITests:
 class PrivateIngredientAPITests:
     """Test the private ingredients API"""
 
-    def test_retrieve_ingredients_list(self, api_client, simple_user) -> None:
+    def test_retrieve_ingredients_list(
+        self, api_client, simple_user, helper_functions
+    ) -> None:
         """Test retrieving a list of ingredients"""
-        Ingredient.objects.create(user=simple_user, name="Strawberry")
-        Ingredient.objects.create(user=simple_user, name="Banana")
+        helper_functions.sample_ingredient(user=simple_user, name="Strawberry")
+        helper_functions.sample_ingredient(user=simple_user, name="Banana")
 
         response = api_client.get(INGREDIENTS_URL)
 
@@ -34,15 +36,15 @@ class PrivateIngredientAPITests:
         assert response.data == serializer.data
 
     def test_ingredients_limited_to_user(
-        self, api_client, simple_user, django_user_model
+        self, api_client, simple_user, django_user_model, helper_functions
     ) -> None:
         """Test that user gets his own ingredients"""
         user2 = django_user_model.objects.create_user(
             "example@gmail.com", "testpassword"
         )
-        Ingredient.objects.create(user=user2, name="Oil")
+        helper_functions.sample_ingredient(user=user2, name="Oil")
 
-        ingredient = Ingredient.objects.create(user=simple_user, name="Water")
+        ingredient = helper_functions.sample_ingredient(user=simple_user, name="Water")
 
         response = api_client.get(INGREDIENTS_URL)
 

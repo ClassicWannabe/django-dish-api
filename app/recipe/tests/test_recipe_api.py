@@ -1,3 +1,5 @@
+import decimal
+
 from django.urls import reverse
 from rest_framework import status
 
@@ -71,3 +73,63 @@ class PrivateRecipeAPITests:
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data == serializer.data
+
+    def test_create_basic_recipe(self, api_client, simple_user) -> None:
+        """Test creating recipe"""
+        payload = {"title": "Rice porridge", "time_min": 20, "price": 1.99}
+
+        response = api_client.post(RECIPES_URL, payload)
+
+        assert response.status_code == status.HTTP_201_CREATED
+
+        recipe = Recipe.objects.get(id=response.data["id"])
+        for key in payload:
+            recipe_attr = getattr(recipe, key)
+            if isinstance(recipe_attr, decimal.Decimal):
+                recipe_attr = float(recipe_attr)
+            assert payload[key] == recipe_attr
+
+    def test_create_with_tags(self, api_client, simple_user, helper_functions) -> None:
+        """Test creating a recipe with tags"""
+        tag1 = helper_functions.sample_tag(user=simple_user, name="Milk free")
+        tag2 = helper_functions.sample_tag(user=simple_user, name="Sugar free")
+        payload = {
+            "title": "Steak",
+            "tags": [tag1.id, tag2.id],
+            "time_min": 60,
+            "price": 20,
+        }
+
+        response = api_client.post(RECIPES_URL, payload)
+
+        assert response.status_code == status.HTTP_201_CREATED
+
+        recipe = Recipe.objects.get(id=response.data["id"])
+        tags = recipe.tags.all()
+
+        assert tags.count() == 2
+        assert tag1 in tags and tag2 in tags
+
+    def test_create_recipe_with_ingredients(
+        self, api_client, simple_user, helper_functions
+    ) -> None:
+        """Test creating a recipe with ingredients"""
+        ingredient1 = helper_functions.sample_ingredient(
+            user=simple_user, name="Orange"
+        )
+        ingredient2 = helper_functions.sample_ingredient(user=simple_user, name="Apple")
+        payload = {
+            "title": "Fruit Salad",
+            "ingredients": [ingredient1.id, ingredient2.id],
+            "time_min": 5,
+            "price": 0.99,
+        }
+        response = api_client.post(RECIPES_URL, payload)
+
+        assert response.status_code == status.HTTP_201_CREATED
+
+        recipe = Recipe.objects.get(id=response.data["id"])
+        ingredients = recipe.ingredients.all()
+
+        assert ingredients.count() == 2
+        assert ingredient1 in ingredients and ingredient2 in ingredients

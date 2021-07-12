@@ -33,12 +33,12 @@ def sample_recipe(user, **params) -> Recipe:
 
 
 @pytest.fixture
-def helper_functions() -> Iterator[Callable]:
+def helper_functions() -> dict[Callable]:
     """Helper functions for creating tags, ingredients and recipes"""
     functions = {
-        "sample_tag": sample_tag,
-        "sample_ingredient": sample_ingredient,
-        "sample_recipe": sample_recipe,
+        sample_tag.__name__: sample_tag,
+        sample_ingredient.__name__: sample_ingredient,
+        sample_recipe.__name__: sample_recipe,
     }
 
     return dotdict(functions)
