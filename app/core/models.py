@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, UserManager
 from django.utils.translation import gettext_lazy as _
+from django.conf import settings
 
 
 class CustomUserManager(UserManager):
@@ -18,9 +19,7 @@ class CustomUserManager(UserManager):
         user.save(using=self._db)
         return user
 
-    def create_superuser(
-        self, email: str, password: str = None
-    ) -> AbstractUser:
+    def create_superuser(self, email: str, password: str = None) -> AbstractUser:
         """Create and save a new superuser"""
         user = self.create_user(email, password)
         user.is_superuser = True
@@ -42,3 +41,13 @@ class CustomUser(AbstractUser):
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
+
+
+class Tag(models.Model):
+    """Tag to be used for recipe"""
+
+    name = models.CharField(_("tag name"), max_length=255)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.name

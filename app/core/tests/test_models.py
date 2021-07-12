@@ -1,6 +1,6 @@
 import pytest
 
-from core.models import CustomUser
+from core.models import CustomUser, Tag
 
 pytestmark = pytest.mark.django_db
 
@@ -37,3 +37,10 @@ def test_create_superuser(django_user_model: CustomUser) -> None:
     )
     assert user.is_superuser
     assert user.is_staff
+
+
+def test_tag_str(simple_user):
+    """Test the tag string represention"""
+    tag = Tag.objects.create(user=simple_user, name="Vegan")
+
+    assert str(tag) == tag.name
