@@ -5,11 +5,12 @@ from rest_framework import status
 
 CREATE_USER_URL = reverse("user:create")
 TOKEN_URL = reverse("user:token")
+ME_URL = reverse("user:me")
 
 pytestmark = pytest.mark.django_db
 
 
-class PublicUserAPITest:
+class PublicUserAPITests:
     """Test the users API (public)"""
 
     def test_create_valid_user_successful(self, django_user_model, api_client) -> None:
@@ -98,3 +99,37 @@ class PublicUserAPITest:
 
         assert "token" not in response.data
         assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_retrieve_user_unathorized(self, api_client) -> None:
+        """Test that authentication is required for users"""
+        response = api_client.get(ME_URL)
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+class PrivateUserAPITests:
+    """Test the API requests that require authentication"""
+
+    def test_retrieve_profile_successful(self, api_client, simple_user):
+        """Test retrieving the profile for logged in user"""
+        response = api_client.get(ME_URL)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data == {"email": simple_user.email, "name": simple_user.name}
+
+    def test_post_me_not_allowed(self, api_client, simple_user):
+        """Test that POST method is not allowed on me url"""
+        response = api_client.post(ME_URL, {})
+
+        assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
+
+    def test_update_user_profile(self, api_client, simple_user):
+        """Test updating the user profile for authenticated user"""
+        payload = {"name": "new name", "password": "otherpass"}
+        response = api_client.patch(ME_URL, payload)
+
+        simple_user.refresh_from_db()
+
+        assert simple_user.name == payload["name"]
+        assert simple_user.check_password(payload["password"])
+        assert response.status_code == status.HTTP_200_OK
