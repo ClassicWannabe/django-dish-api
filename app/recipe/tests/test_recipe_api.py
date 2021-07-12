@@ -133,3 +133,47 @@ class PrivateRecipeAPITests:
 
         assert ingredients.count() == 2
         assert ingredient1 in ingredients and ingredient2 in ingredients
+
+    def test_partial_update_recipe(
+        self, api_client, simple_user, helper_functions
+    ) -> None:
+        """Test updating a recipe with patch"""
+        recipe = helper_functions.sample_recipe(user=simple_user)
+        recipe.tags.add(helper_functions.sample_tag(user=simple_user))
+        new_tag = helper_functions.sample_tag(user=simple_user, name="Dry")
+        payload = {"title": "Fruit Paradise", "tags": [new_tag.id]}
+        url = recipe_detail_url(recipe.id)
+
+        response = api_client.patch(url, payload)
+
+        recipe.refresh_from_db()
+
+        assert response.status_code == status.HTTP_200_OK
+        assert recipe.title == payload["title"]
+
+        tags = recipe.tags.all()
+
+        assert len(tags) == 1
+        assert new_tag in tags
+
+    def test_full_update_recipe(
+        self, api_client, simple_user, helper_functions
+    ) -> None:
+        """Test updating a recipe with put"""
+        recipe = helper_functions.sample_recipe(user=simple_user)
+        recipe.tags.add(helper_functions.sample_tag(user=simple_user))
+        payload = {"title": "Black Ice Cream", "time_min": 10, "price": 10}
+        url = recipe_detail_url(recipe.id)
+
+        response = api_client.put(url, payload)
+
+        recipe.refresh_from_db()
+
+        assert response.status_code == status.HTTP_200_OK
+        assert recipe.title == payload["title"]
+        assert recipe.time_min == payload["time_min"]
+        assert recipe.price == payload["price"]
+
+        tags = recipe.tags.all()
+
+        assert len(tags) == 0
