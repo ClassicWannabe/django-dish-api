@@ -1,6 +1,6 @@
 import pytest
 
-from core.models import CustomUser, Tag, Ingredient
+from core.models import CustomUser, Tag, Ingredient, Recipe
 
 pytestmark = pytest.mark.django_db
 
@@ -51,3 +51,12 @@ def test_ingredient_str(simple_user) -> None:
     ingredient = Ingredient.objects.create(user=simple_user, name="Tomato")
 
     assert str(ingredient) == ingredient.name
+
+
+def test_recipe_str(simple_user) -> None:
+    """Test the recipe string representation"""
+    recipe = Recipe.objects.create(
+        user=simple_user, title="Lasagna", time_min=20, price=49.99
+    )
+
+    assert str(recipe) == recipe.title

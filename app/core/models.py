@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, UserManager
 from django.utils.translation import gettext_lazy as _
+from django.core.validators import MinValueValidator
 from django.conf import settings
 
 
@@ -61,3 +62,20 @@ class Ingredient(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Recipe(models.Model):
+    """Recipe objects"""
+
+    title = models.CharField(_("recipe title"), max_length=255)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    time_min = models.IntegerField(
+        _("preparation time in minutes"), validators=[MinValueValidator(0)]
+    )
+    price = models.DecimalField(_("price in USD"), max_digits=5, decimal_places=2)
+    link = models.URLField(_("Optional URL"), blank=True, max_length=255)
+    ingredients = models.ManyToManyField("Ingredient")
+    tags = models.ManyToManyField("Tag")
+
+    def __str__(self):
+        return self.title
