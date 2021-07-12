@@ -2,18 +2,15 @@ from django.urls import reverse
 from rest_framework import status
 
 from core.models import Recipe
-from recipe.serializers import RecipeSerializer
+from recipe.serializers import RecipeSerializer, RecipeDetailSerializer
 
 
 RECIPES_URL = reverse("recipe:recipe-list")
 
 
-def sample_recipe(user, **params) -> Recipe:
-    """Create and return a sample recipe"""
-    defaults = {"time_min": 5, "price": 4.99, "title": "Sample Recipe"}
-    defaults.update(params)
-
-    return Recipe.objects.create(user=user, **defaults)
+def recipe_detail_url(recipe_id: int) -> str:
+    """Return recipe detail URL"""
+    return reverse("recipe:recipe-detail", args=[recipe_id])
 
 
 class PublicRecipeAPITests:
@@ -29,10 +26,10 @@ class PublicRecipeAPITests:
 class PrivateRecipeAPITests:
     """Test authenticated recipe API access"""
 
-    def test_retrieve_recipes(self, api_client, simple_user) -> None:
+    def test_retrieve_recipes(self, api_client, simple_user, helper_functions) -> None:
         """Test retrieving a list of recipes"""
-        sample_recipe(simple_user)
-        sample_recipe(simple_user)
+        helper_functions.sample_recipe(simple_user)
+        helper_functions.sample_recipe(simple_user)
 
         response = api_client.get(RECIPES_URL)
 
@@ -43,12 +40,12 @@ class PrivateRecipeAPITests:
         assert response.data == serializer.data
 
     def test_recipes_limited_to_user(
-        self, api_client, simple_user, django_user_model
+        self, api_client, simple_user, django_user_model, helper_functions
     ) -> None:
         """Test retrieving recipes for user"""
         user2 = django_user_model.objects.create_user("sample@yandex.ru", "PassworD")
-        sample_recipe(simple_user)
-        sample_recipe(user2)
+        helper_functions.sample_recipe(simple_user)
+        helper_functions.sample_recipe(user2)
 
         response = api_client.get(RECIPES_URL)
 
@@ -57,4 +54,20 @@ class PrivateRecipeAPITests:
 
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data) == 1
+        assert response.data == serializer.data
+
+    def test_view_recipe_detail(
+        self, api_client, simple_user, helper_functions
+    ) -> None:
+        """Test viewing a recipe detail"""
+        recipe = helper_functions.sample_recipe(user=simple_user)
+        recipe.tags.add(helper_functions.sample_tag(user=simple_user))
+        recipe.ingredients.add(helper_functions.sample_ingredient(user=simple_user))
+
+        url = recipe_detail_url(recipe.id)
+        response = api_client.get(url)
+
+        serializer = RecipeDetailSerializer(recipe)
+
+        assert response.status_code == status.HTTP_200_OK
         assert response.data == serializer.data
