@@ -1,4 +1,6 @@
-import decimal
+import decimal, tempfile, os
+
+from PIL import Image
 
 from django.urls import reverse
 from rest_framework import status
@@ -8,6 +10,11 @@ from recipe.serializers import RecipeSerializer, RecipeDetailSerializer
 
 
 RECIPES_URL = reverse("recipe:recipe-list")
+
+
+def image_upload_url(recipe_id: int) -> str:
+    """Return URL for recipe image upload"""
+    return reverse("recipe:recipe-upload-image", args=[recipe_id])
 
 
 def recipe_detail_url(recipe_id: int) -> str:
@@ -177,3 +184,30 @@ class PrivateRecipeAPITests:
         tags = recipe.tags.all()
 
         assert len(tags) == 0
+
+
+class RecipeImageUploadTests:
+    """Test image uploads for recipe API"""
+
+    def test_upload_image_successful(self, recipe_for_image_upload, api_client) -> None:
+        """Test uploading an image to recipe"""
+        url = image_upload_url(recipe_for_image_upload.id)
+
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
+            img = Image.new("RGB", (10, 10))
+            img.save(ntf, format="JPEG")
+            ntf.seek(0)
+            response = api_client.post(url, {"image": ntf}, format="multipart")
+
+        recipe_for_image_upload.refresh_from_db()
+
+        assert response.status_code == status.HTTP_200_OK
+        assert "image" in response.data
+        assert os.path.exists(recipe_for_image_upload.image.path)
+
+    def test_upload_image_failed(self, recipe_for_image_upload, api_client) -> None:
+        """Test uploading an invalid image"""
+        url = image_upload_url(recipe_for_image_upload.id)
+        response = api_client.post(url, {"image": "fakeimage"}, format="multipart")
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST

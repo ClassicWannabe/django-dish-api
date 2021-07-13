@@ -33,7 +33,7 @@ def sample_recipe(user, **params) -> Recipe:
 
 
 @pytest.fixture
-def helper_functions() -> dict[Callable]:
+def helper_functions() -> dotdict[Callable]:
     """Helper functions for creating tags, ingredients and recipes"""
     functions = {
         sample_tag.__name__: sample_tag,
@@ -46,18 +46,31 @@ def helper_functions() -> dict[Callable]:
 
 @pytest.fixture
 def api_client() -> APIClient:
+    """Helper object for HTTP requests"""
     return APIClient()
 
 
 @pytest.fixture
 def create_user(django_user_model):
+    """Helper function for creating user"""
     return django_user_model.objects.create_user
 
 
 @pytest.fixture
 def simple_user(create_user, api_client):
+    """Create and return authenticated user"""
     user = create_user(
         email="ruslaneleusinov@gmail.com", password="mypass", name="ruslan"
     )
     api_client.force_authenticate(user=user)
     yield user
+
+
+@pytest.fixture
+def recipe_for_image_upload(simple_user):
+    """Create a recipe for image upload and clean up after testing"""
+    recipe = sample_recipe(user=simple_user)
+
+    yield recipe
+
+    recipe.image.delete()
