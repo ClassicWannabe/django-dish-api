@@ -1,4 +1,6 @@
-import decimal, tempfile, os
+import decimal
+import tempfile
+import os
 
 from PIL import Image
 
@@ -211,3 +213,55 @@ class RecipeImageUploadTests:
         response = api_client.post(url, {"image": "fakeimage"}, format="multipart")
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_filter_recipes_by_tags(
+        self, simple_user, api_client, helper_functions
+    ) -> None:
+        """Test returning recipes with specific tags"""
+        recipe1 = helper_functions.sample_recipe(user=simple_user, title="Sushi")
+        recipe2 = helper_functions.sample_recipe(user=simple_user, title="Cereal")
+        tag1 = helper_functions.sample_tag(user=simple_user, name="East kitchen")
+        tag2 = helper_functions.sample_tag(user=simple_user, name="Easy level")
+        recipe1.tags.add(tag1)
+        recipe2.tags.add(tag2)
+        recipe3 = helper_functions.sample_recipe(user=simple_user, title="Manty")
+
+        response = api_client.get(RECIPES_URL, {"tags": f"{tag1.id},{tag2.id}"})
+
+        serializer1 = RecipeSerializer(recipe1)
+        serializer2 = RecipeSerializer(recipe2)
+        serializer3 = RecipeSerializer(recipe3)
+
+        assert serializer1.data in response.data
+        assert serializer2.data in response.data
+        assert serializer3.data not in response.data
+
+    def test_filter_recipes_by_ingredients(
+        self, simple_user, api_client, helper_functions
+    ) -> None:
+        """Test returning recipes with specific ingredients"""
+        recipe1 = helper_functions.sample_recipe(user=simple_user, title="Pirozhki")
+        recipe2 = helper_functions.sample_recipe(
+            user=simple_user, title="Fried chicken"
+        )
+        ingredient1 = helper_functions.sample_ingredient(
+            user=simple_user, name="Potato"
+        )
+        ingredient2 = helper_functions.sample_ingredient(
+            user=simple_user, name="Chicken"
+        )
+        recipe1.ingredients.add(ingredient1)
+        recipe2.ingredients.add(ingredient2)
+        recipe3 = helper_functions.sample_recipe(user=simple_user, title="Boiled eggs")
+
+        response = api_client.get(
+            RECIPES_URL, {"ingredients": f"{ingredient1.id},{ingredient2.id}"}
+        )
+
+        serializer1 = RecipeSerializer(recipe1)
+        serializer2 = RecipeSerializer(recipe2)
+        serializer3 = RecipeSerializer(recipe3)
+
+        assert serializer1.data in response.data
+        assert serializer2.data in response.data
+        assert serializer3.data not in response.data
