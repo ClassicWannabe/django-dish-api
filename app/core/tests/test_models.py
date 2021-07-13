@@ -1,6 +1,7 @@
+from unittest.mock import patch
 import pytest
 
-from core.models import CustomUser, Tag, Ingredient, Recipe
+from core.models import CustomUser, Tag, Ingredient, Recipe, recipe_image_file_path
 
 pytestmark = pytest.mark.django_db
 
@@ -60,3 +61,14 @@ def test_recipe_str(simple_user) -> None:
     )
 
     assert str(recipe) == recipe.title
+
+
+@patch("uuid.uuid4")
+def test_recipe_file_name_uuid(mock_uuid) -> None:
+    """Test that image is saved in the correct location"""
+    uuid = "test-uuid"
+    mock_uuid.return_value = uuid
+    file_path = recipe_image_file_path(None, "myimage.jpeg")
+    exp_path = f"uploads/recipe/{uuid}.jpeg"
+
+    assert file_path == exp_path
