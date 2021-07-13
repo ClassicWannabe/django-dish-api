@@ -70,3 +70,37 @@ class PrivateIngredientAPITests:
         response = api_client.post(INGREDIENTS_URL, payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_retrieve_ingredients_assigned_to_recipes(
+        self, api_client, simple_user, helper_functions
+    ) -> None:
+        """Test filtering ingredients by those assigned to recipes"""
+        ingredient1 = helper_functions.sample_ingredient(
+            user=simple_user, name="Cabbage"
+        )
+        ingredient2 = helper_functions.sample_ingredient(user=simple_user, name="Honey")
+        recipe = helper_functions.sample_recipe(user=simple_user, title="Cold tea")
+        recipe.ingredients.add(ingredient2)
+
+        response = api_client.get(INGREDIENTS_URL, {"assigned_only": 1})
+
+        serializer1 = IngredientSerializer(ingredient1)
+        serializer2 = IngredientSerializer(ingredient2)
+
+        assert serializer2.data in response.data
+        assert serializer1.data not in response.data
+
+    def test_retrieve_ingredients_assigned_unique(
+        self, api_client, simple_user, helper_functions
+    ) -> None:
+        """Test filtering ingredients by assigned returns unique items"""
+        ingredient = helper_functions.sample_ingredient(user=simple_user, name="Pepper")
+        helper_functions.sample_ingredient(user=simple_user, name="Cheese")
+        recipe1 = helper_functions.sample_recipe(user=simple_user, title="Seasoning")
+        recipe2 = helper_functions.sample_recipe(user=simple_user, title="Mohito")
+        recipe1.ingredients.add(ingredient)
+        recipe2.ingredients.add(ingredient)
+
+        response = api_client.get(INGREDIENTS_URL, {"assigned_only": 1})
+
+        assert len(response.data) == 1

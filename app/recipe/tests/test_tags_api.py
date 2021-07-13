@@ -68,3 +68,35 @@ class PrivateTagsAPITests:
         response = api_client.post(TAGS_URL, payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_retrieve_tags_assigned_to_recipes(
+        self, api_client, simple_user, helper_functions
+    ) -> None:
+        """Test filtering tags by those assigned to recipes"""
+        tag1 = helper_functions.sample_tag(user=simple_user, name="Cold")
+        tag2 = helper_functions.sample_tag(user=simple_user, name="Hot")
+        recipe = helper_functions.sample_recipe(user=simple_user, title="Super dish")
+        recipe.tags.add(tag1)
+
+        response = api_client.get(TAGS_URL, {"assigned_only": 1})
+
+        serializer1 = TagSerializer(tag1)
+        serializer2 = TagSerializer(tag2)
+
+        assert serializer1.data in response.data
+        assert serializer2.data not in response.data
+
+    def test_retrieve_tags_assigned_unique(
+        self, api_client, simple_user, helper_functions
+    ) -> None:
+        """Test filtering tags by assigned returns unique items"""
+        tag = helper_functions.sample_tag(user=simple_user, name="Fresh")
+        helper_functions.sample_tag(user=simple_user, name="Lunch")
+        recipe1 = helper_functions.sample_recipe(user=simple_user, title="Besbarmak")
+        recipe2 = helper_functions.sample_recipe(user=simple_user, title="Kozhe")
+        recipe1.tags.add(tag)
+        recipe2.tags.add(tag)
+
+        response = api_client.get(TAGS_URL, {"assigned_only": 1})
+
+        assert len(response.data) == 1
